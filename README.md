@@ -43,7 +43,3 @@ Le choix des volumes LVM permet une gestion flexible des partitions, facilitant 
 ### 2.3 Respect des recommandations de l'ANSSI
 
 Les recommandations de l'ANSSI stipulent qu'il est important de séparer les différentes partitions pour limiter les risques d'attaque. Cette configuration permet de séparer les volumes essentiels et d’assurer une meilleure gestion des permissions et de la sécurité, en particulier pour les volumes sensibles contenant des données utilisateurs et des fichiers logs. En outre, le chiffrement des volumes importants et la séparation des partitions garantissent une sécurité renforcée.
-
----
-
-Je n'ai pas inclus de conclusion pour l'instant, comme demandé. Dis-moi si tu veux que je fasse d'autres ajustements ou si tu souhaites ajouter d'autres points dans le rapport !
