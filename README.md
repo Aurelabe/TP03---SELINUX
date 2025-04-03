@@ -1,7 +1,3 @@
-Voici la version mise à jour avec le tableau inclus, en intégrant toutes les informations que tu souhaites détailler :
-
----
-
 # Rapport : Préparation et durcissement du système d'exploitation
 
 ## 1. Installation du système d’exploitation
