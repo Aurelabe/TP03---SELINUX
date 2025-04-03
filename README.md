@@ -43,3 +43,142 @@ Le choix des volumes LVM permet une gestion flexible des partitions, facilitant 
 ### 2.3 Respect des recommandations de l'ANSSI
 
 Les recommandations de l'ANSSI stipulent qu'il est important de séparer les différentes partitions pour limiter les risques d'attaque. Cette configuration permet de séparer les volumes essentiels et d’assurer une meilleure gestion des permissions et de la sécurité, en particulier pour les volumes sensibles contenant des données utilisateurs et des fichiers logs. En outre, le chiffrement des volumes importants et la séparation des partitions garantissent une sécurité renforcée.
+
+---
+
+## 3.1 Sécurisation de l’administration du serveur
+
+### Configuration de SSH et Renforcement de la Sécurité
+Afin de respecter les bonnes pratiques de sécurisation de l’administration, nous avons mis en place un serveur SSH renforcé, permettant uniquement aux utilisateurs autorisés d'accéder au serveur à l’aide d’une clé SSH sécurisée.
+
+Voici les étapes entreprises pour sécuriser l'accès SSH :
+
+1. **Changement du port SSH :**
+   Le port par défaut de SSH (22/tcp) a été modifié en **1025/tcp** pour éviter les tentatives d'attaques automatisées sur le port standard. Cette ligne de `/etc/ssh/sshd_config` a été modifiée
+
+   ```bash   
+   Port 1025
+   ``` 
+
+2. **Configuration des clés SSH :**
+   Pour renforcer la sécurité, nous avons configuré l’accès de sorte à ce qu'il soit fait uniquement via des clés SSH, ce qui empêche l'utilisation de mots de passe pour la connexion SSH. Cela élimine les risques associés aux attaques par brute force.
+
+   Configuration dans `/etc/ssh/sshd_config` :
+   ```bash
+   PasswordAuthentication no
+   PubkeyAuthentication yes
+   ```
+
+3. **Restriction de l’accès SSH :**
+   Nous avons également mis en place deux configurations supplémentaires :
+
+   - **Limitation des utilisateurs autorisés** : Nous avons ajouté la directive `AllowUsers` pour restreindre l'accès SSH uniquement à l'utilisateur `admin`. Cela empêche tout autre utilisateur non autorisé de se connecter via SSH.
+
+   - **Désactivation de l'accès root** : La directive `PermitRootLogin` a été définie sur `no` pour interdire les connexions directes à l'utilisateur root. Cela empêche toute tentative de connexion en utilisant le compte root, renforçant ainsi la sécurité en obligeant l'utilisation d'un compte utilisateur spécifique pour toute connexion SSH.
+
+   Pour ce faire, les ajouts suivants ont été effectués dans le fichier de configuration `/etc/ssh/sshd_config` :
+
+   ```bash
+   AllowUsers admin
+   PermitRootLogin no
+   ```
+
+4. **Filtrage du trafic réseau via firewalld :**
+   Nous avons retiré tous les services de la zone "public" et mis en place une zone **restricted** afin de n’autoriser que les connexions réseau nécessaires, notamment celles sur le port **1025** pour SSH et  nous avons réservé **7512/tcp** pour SMB qui sera installé dans la suite du TP.
+
+   **Commandes exécutées pour la création et la configuration de zone restricted:**
+   ```bash
+   # Création de la zone restricted
+   sudo firewall-cmd --permanent --new-zone=restricted
+   # Ajout des interfaces enp0s3 et enp0s8 à la zone restricted
+   sudo firewall-cmd --permanent --zone=restricted --change-zone=enp0s3
+   sudo firewall-cmd --permanent --zone=restricted --change-zone=enp0s8
+   # Ouverture des ports nécessaires
+   sudo firewall-cmd --permanent --zone=restricted --add-port=1025/tcp
+   sudo firewall-cmd --permanent --zone=restricted --add-port=7512/tcp
+   # Rechargement de la configuration
+   sudo firewall-cmd --reload
+   ```
+
+   **Vérification de la zone :**
+   ```bash
+   sudo firewall-cmd --list-all
+   ```
+  ![image](https://github.com/user-attachments/assets/764b4690-0448-4025-9d23-3a23604ce554)
+
+   
+---
+
+## 3.1.3 Politique de sécurité
+
+### Configuration des mots de passe forts via PAM
+Nous avons configuré **PAM** (Pluggable Authentication Modules) afin de renforcer la politique de sécurité des mots de passe. La politique impose une longueur minimale de 10 caractères, ainsi qu’une complexité incluant au moins une majuscule, une minuscule, un chiffre et un caractère spécial.
+
+**Modification du fichier `/etc/pam.d/system-auth` pour appliquer cette politique :**
+
+```bash
+sudo vim /etc/pam.d/system-auth
+# Ajout ou modification de la ligne suivante :
+password requisite pam_pwquality.so retry=3 minlen=10 minclass=4
+```
+
+---
+
+## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
+
+### Installation de Samba
+Nous avons installé la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Samba permet de créer des partages réseau compatibles avec les systèmes Windows.
+
+1. **Installation de Samba :**
+   ```bash
+   sudo dnf install samba
+   ```
+
+2. **Configuration des fichiers de partage :**
+   La configuration de Samba a été effectuée dans le fichier `/etc/samba/smb.conf` pour définir les partages et les autorisations d'accès.
+
+   Exemple d’un partage défini pour **/srv/fileserver** :
+   ```ini
+   [fileserver]
+   path = /srv/fileserver
+   read only = no
+   ```
+
+---
+
+## 3.2.2 Préparation des Comptes Utilisateurs
+
+### Création des utilisateurs et groupes
+Un script shell a été créé pour automatiser la création des comptes utilisateurs et des groupes pour Samba, conformément aux spécifications du TP.
+
+1. **Script pour créer des utilisateurs et des groupes** :
+   Le script prend en entrée un fichier structuré contenant la liste des utilisateurs et des groupes à créer. Le mot de passe pour chaque utilisateur est généré conformément à la politique de sécurité de l’entreprise.
+
+   Exemple de script :
+
+   ```bash
+   #!/bin/bash
+   create_group() {
+       groupname=$1
+       if ! getent group $groupname > /dev/null; then
+           groupadd $groupname
+           echo "Groupe $groupname créé"
+       else
+           echo "Le groupe $groupname existe déjà"
+       fi
+   }
+
+   # Liste des utilisateurs et groupes à créer
+   create_group "Service_Informatique"
+   create_group "Service_Comptable"
+   create_group "Pilotage"
+   create_group "Direction"
+
+   # Création des utilisateurs et assignation des groupes
+   useradd -m -G Service_Informatique utilisateur1
+   passwd utilisateur1
+   ```
+
+---
+
+## 3.2.3 Structure des Répertoires
