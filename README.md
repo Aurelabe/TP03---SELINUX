@@ -179,7 +179,7 @@ En cas d’évolution des exigences (stockage de données confidentielles), une 
 
 On utilise `lsblk` pour vérifier la hiérarchie des volumes :
 
-![image](https://github.com/user-attachments/assets/1b47e6d5-71f5-405f-b412-b0f7c3b8b964)
+![image](https://github.com/user-attachments/assets/933b1da3-183e-4ced-b65b-6e8f2deb4a32)
 
 
 ### 3.2.2 Configuration de Samba
