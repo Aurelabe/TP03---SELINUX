@@ -178,9 +178,6 @@ En cas d’évolution des exigences (stockage de données confidentielles), une 
 #### 4. Vérification de la structure des disques
 
 On utilise `lsblk` pour vérifier la hiérarchie des volumes :
-```bash
-lsblk
-```
 
 ![image](https://github.com/user-attachments/assets/1b47e6d5-71f5-405f-b412-b0f7c3b8b964)
 
