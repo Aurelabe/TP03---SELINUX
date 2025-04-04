@@ -283,4 +283,222 @@ sudo ss -tnlp | grep 7512
 ![image](https://github.com/user-attachments/assets/6d329026-0fd7-4224-9df8-934190f45345)
 
 
+### 3.2.3 Préparation des Comptes Utilisateurs
 
+#### Objectif
+Le but ici est de créer un script shell qui générera automatiquement des comptes et des groupes d'utilisateurs pour le serveur Samba. Ce script devra également créer des mots de passe forts, tout en respectant les bonnes pratiques de sécurité et en permettant une exécution sécurisée par les membres du service informatique.
+
+### Détails du processus
+
+1. **Création du fichier script pour gérer les utilisateurs** :
+   
+   Le script doit être capable de créer les comptes et groupes d'utilisateurs de manière sécurisée. Il prendra en entrée un fichier structuré contenant la liste des utilisateurs et des groupes à créer.
+
+   - **Le fichier structuré** devra être un fichier CSV, où chaque ligne contient un utilisateur et son groupe correspondant.
+   
+   - **Les comptes d’utilisateurs** doivent être créés avec des mots de passe forts, qui répondent à la politique de sécurité (minimum 10 caractères, avec des majuscules, minuscules, chiffres et caractères spéciaux).
+   
+   - **Les groupes d’utilisateurs** doivent également être créés si nécessaire.
+
+2. **Script pour la création des utilisateurs** :
+
+   Ce script **create_users** qui sera enregistré dans **/opt/scripts/maintenance/** va créer des utilisateurs et des groupes tout en générant un mot de passe fort pour chaque utilisateur. Il s’assure également que le script est exécuté par un utilisateur ayant des privilèges élevés (root).
+
+```bash
+   #/opt/scripts/maintenance/create_users.sh
+   
+   # Vérifier que le script est exécuté en tant que root
+   if [[ $(id -u) -ne 0 ]]; then
+       echo "Ce script doit être exécuté avec des privilèges root."
+       exit 1
+   fi
+
+   # Vérifier que l'argument (fichier CSV) est passé et que le fichier existe
+   if [[ -z "$1" ]] || [[ ! -f "$1" ]]; then
+       echo "Veuillez fournir un fichier CSV valide."
+       exit 1
+   fi
+
+   # Vérifier que le fichier est bien au format CSV
+   if [[ ! "$1" =~ \.csv$ ]]; then
+       echo "Le fichier doit être au format CSV."
+       exit 1
+   fi
+
+   # Fonction pour créer un groupe
+   create_group() {
+       if ! getent group $1 > /dev/null; then
+           groupadd $1
+           echo "Groupe $1 créé."
+       else
+           echo "Le groupe $1 existe déjà."
+       fi
+   }
+
+   # Fonction pour créer un utilisateur avec mot de passe fort
+   create_user() {
+       if ! id "$1" &>/dev/null; then
+           useradd -m -s /bin/bash -G $2 $1
+           PASSWORD=$(openssl rand -base64 12)  # Générer un mot de passe fort
+           echo "$1:$PASSWORD" | chpasswd
+           echo "Utilisateur $1 créé avec mot de passe : $PASSWORD"
+       else
+           echo "L'utilisateur $1 existe déjà."
+       fi
+   }
+
+   # Lecture du fichier CSV et création des utilisateurs et groupes
+   while IFS=, read -r username group; do
+       # Ignorer les lignes vides et les commentaires
+       if [[ -z "$username" || "$username" =~ ^# ]]; then
+           continue
+       fi
+
+       create_group $group
+       create_user $username $group
+   done < "$1"
+   ```
+
+
+Voici la mise à jour du script pour accepter uniquement des fichiers CSV comme entrée. Le script vérifiera également que le fichier est bien au format CSV avant de procéder à la création des utilisateurs et groupes :
+
+### 3.2.3 Préparation des Comptes Utilisateurs
+
+#### Objectif
+Le but ici est de créer un script shell qui générera automatiquement des comptes et des groupes d'utilisateurs pour le serveur Samba. Ce script devra également créer des mots de passe forts, tout en respectant les bonnes pratiques de sécurité et en permettant une exécution sécurisée par les membres du service informatique.
+
+### Détails du processus
+
+1. **Création du fichier script pour gérer les utilisateurs** :
+   
+   Le script doit être capable de créer les comptes et groupes d'utilisateurs de manière sécurisée. Il prendra en entrée un fichier structuré au format CSV contenant la liste des utilisateurs et des groupes à créer.
+
+   - **Le fichier structuré** devra être un fichier CSV, où chaque ligne contient un utilisateur et son groupe correspondant.
+
+   - **Les comptes d’utilisateurs** doivent être créés avec des mots de passe forts, qui répondent à la politique de sécurité (minimum 10 caractères, avec des majuscules, minuscules, chiffres et caractères spéciaux).
+
+   - **Les groupes d’utilisateurs** doivent également être créés si nécessaire.
+
+2. **Script pour la création des utilisateurs** :
+
+   Le script **create_users** qui sera enregistré dans **/opt/scripts/maintenance/** va créer des utilisateurs et des groupes tout en générant un mot de passe fort pour chaque utilisateur. Il s’assure également que le script est exécuté par un utilisateur ayant des privilèges élevés (root). De plus, il vérifiera que le fichier d'entrée est bien un fichier CSV valide. Pour s'assurer que les noms des groupes ne contiennent pas d'espaces, nous pouvons écrire le script de manière à remplacer les espaces par des underscores (`_`).
+
+   ```bash
+   #/opt/scripts/maintenance/create_users.sh
+   
+   # Vérifier que le script est exécuté en tant que root
+   if [[ $(id -u) -ne 0 ]]; then
+       echo "Ce script doit être exécuté avec des privilèges root."
+       exit 1
+   fi
+   
+   # Vérifier que l'argument (fichier CSV) est passé et que le fichier existe
+   if [[ -z "$1" ]] || [[ ! -f "$1" ]]; then
+       echo "Veuillez fournir un fichier CSV valide."
+       exit 1
+   fi
+   
+   # Vérifier que le fichier est bien au format CSV
+   if [[ ! "$1" =~ \.csv$ ]]; then
+       echo "Le fichier doit être au format CSV."
+       exit 1
+   fi
+   
+   # Fonction pour créer un groupe
+   create_group() {
+       # Remplacer les espaces par des tirets (ou underscores si tu préfères)
+       group_name=$(echo "$1" | tr ' ' '_')
+       
+       if ! getent group "$group_name" > /dev/null; then
+           groupadd "$group_name"
+           echo "Groupe $group_name créé."
+       else
+           echo "Le groupe $group_name existe déjà."
+       fi
+   }
+   
+   # Fonction pour créer un utilisateur avec mot de passe fort
+   create_user() {
+       if ! id "$1" &>/dev/null; then
+           useradd -m -s /bin/bash -G "$2" "$1"
+           PASSWORD=$(openssl rand -base64 12)  # Générer un mot de passe fort
+           echo "$1:$PASSWORD" | chpasswd
+           echo "Utilisateur $1 créé avec mot de passe : $PASSWORD"
+       else
+           echo "L'utilisateur $1 existe déjà."
+       fi
+   }
+   
+   # Lecture du fichier CSV et création des utilisateurs et groupes
+   while IFS=, read -r username group; do
+       # Ignorer les lignes vides et les commentaires
+       if [[ -z "$username" || "$username" =~ ^# ]]; then
+           continue
+       fi
+   
+       create_group "$group"
+       create_user "$username" "$group"
+   done < "$1"
+   ```
+
+3. **Utilisation du script** :
+   
+   Le script peut être exécuté de la manière suivante :
+
+   - Le fichier d'entrée doit être un fichier CSV (dans notre cas **users.csv**).
+   
+   - Contenu du fichier **/opt/scripts/maintenance/users.csv** pour notre cas :
+     ```csv
+      Edouard-Franck Wagner,Direction
+      Édouard-Franck Wagner,Pilotage
+      Alexandra Met,Pilotage
+      Claude Muller,Pilotage
+      Gabriel Benard,Pilotage
+      Alexandra Met,Service_Comptable
+      Tristan Maurice,Service_Comptable
+      Alfred Laroche,Service_Comptable
+      Claude Muller,Service_Informatique
+      Henriette Julien,Service_Informatique
+      Jeanne Pasquier,Service_Informatique
+      Monique Pires,Service_Informatique
+      Gabriel Benard,Service_Logistique
+      Cerise Lapresse,Service_Logistique
+      Richard Pirouet,Service_Logistique
+      Jacques Bonnet,Service_Logistique
+      Louis Lamoureux,Service_Logistique
+      Honore Adler,Service_Logistique
+     ```
+   
+   - Commande pour exécuter le script avec un fichier CSV :
+     ```bash
+     sudo /opt/scripts/maintenance/create_users.sh /opt/scripts/maintenance/users.csv
+     ```
+
+
+4. **Sécurisation du script** :
+
+   Le script doit être sécurisé, de sorte qu’il ne puisse être exécuté que par des utilisateurs ayant des privilèges élevés (root). De plus, seuls les membres du **Service Informatique** auront le droit d'exécuter ce script. On peut donc restreindre l'accès à ce fichier en modifiant ses permissions :
+
+```bash
+sudo chown root:Service_Informatique /opt/scripts/maintenance/create_users.sh
+sudo chmod 750 /opt/scripts/maintenance/create_users.sh
+```
+
+Les membres du groupe **Service Informatique** peuvent exécuter ce script avec `sudo`, mais aucun autre utilisateur ne pourra l'exécuter.
+
+
+5. **Exécution du script avec privilèges élevés** :
+
+   - Nous devons nous assurer que le script peut être exécuté avec des privilèges root par les utilisateurs du service informatique sans avoir besoin d'entrer le mot de passe root. Pour cela, nous devons ajouter une règle dans le fichier `sudoers` :
+
+   ```bash
+   sudo visudo
+   ```
+
+   - Ajoutez la ligne suivante pour permettre l’exécution du script par les membres du groupe `it_team` :
+
+   ```
+   %it_team ALL=(ALL) NOPASSWD: /opt/scripts/maintenance/create_users.sh
+   ```
+
+   Cela permettra aux membres du groupe `it_team` d’exécuter ce script sans avoir à entrer le mot de passe root.
