@@ -400,6 +400,7 @@ Le but ici est de créer un script shell qui générera automatiquement des comp
      ```bash
      sudo /opt/scripts/maintenance/create_users.sh /opt/scripts/maintenance/users.csv
      ```
+![Capture d'écran 2025-04-04 093826](https://github.com/user-attachments/assets/e6de6a7c-17c9-4d62-8758-51c0d6260817)
 
 
 4. **Sécurisation du script** :
