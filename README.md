@@ -423,10 +423,6 @@ Les membres du groupe **Service Informatique** peuvent exécuter ce script avec 
    sudo visudo
    ```
 
-   - Ajoutez la ligne suivante pour permettre l’exécution du script par les membres du groupe `it_team` :
-
    ```
-   %it_team ALL=(ALL) NOPASSWD: /opt/scripts/maintenance/create_users.sh
+   %Service_Informatique ALL=(ALL) NOPASSWD: /opt/scripts/maintenance/create_users.sh
    ```
-
-   Cela permettra aux membres du groupe `it_team` d’exécuter ce script sans avoir à entrer le mot de passe root.
