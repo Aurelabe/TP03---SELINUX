@@ -50,7 +50,7 @@ Les recommandations de l'ANSSI stipulent qu'il est important de séparer les dif
 ## 3.1.1 Sécurisation de l’administration du serveur
 
 ### Mise à jour
-Avant de commencer quoi que ce soit, il est important de lancer une mises à jour afin d'avoir les derniers correctifs de sécurité
+Avant de commencer quoi que ce soit, il est important de lancer une mise à jour afin d'avoir les derniers correctifs de sécurité
 **Commande exécutée :**
 
    ```bash   
