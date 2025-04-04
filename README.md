@@ -1,4 +1,4 @@
-# Rapport : Préparation et durcissement du système d'exploitation
+   # Rapport : Préparation et durcissement du système d'exploitation
 
 ## 1. Installation du système d’exploitation
 
@@ -198,24 +198,19 @@ Nous avons installé la dernière version de Samba pour permettre la gestion des
 sudo dnf install samba
 ```
 
-Cette commande installe Samba ainsi que les autres paquets nécessaires à son fonctionnement.
-
 #### 2. **Configuration de Samba**
 
 Nous avons ensuite configuré le fichier **`/etc/samba/smb.conf`** afin de définir le partage et les paramètres nécessaires.
 
-**Extrait de la configuration de `smb.conf`** pour le partage du répertoire **`/srv/fileserver`** :
+**Lignes ajoutées à `smb.conf`** pour le partage du répertoire **`/srv/fileserver`** :
 
 ```ini
-[global]
-    workgroup = SAMBA
-    security = user
-    passdb backend = tdbsam
-
 [fileserver]
-    path = /srv/fileserver
-    read only = no
-    browseable = yes
+   path = /srv/fileserver
+   read only = no
+   browsable = yes
+   guest ok = no
+   valid users = @users
 ```
 
 Cette configuration définit un partage **`fileserver`** pointant sur la partition montée à **`/srv/fileserver`**, avec un accès en lecture et écriture.
@@ -226,41 +221,27 @@ Le port par défaut de Samba pour les services SMB (445/tcp) peut être modifié
 
 **Modification du port dans `smb.conf`** :
 
-Nous avons ajouté la ligne suivante à la section **[global]** du fichier **`/etc/samba/smb.conf`** pour utiliser un autre port (par exemple, **7512**):
+Nous avons ajouté la ligne suivante à la section **[global]** du fichier **`/etc/samba/smb.conf`** pour utiliser un autre port (dans notre cas, **7512**):
 
 ```ini
 [global]
-    workgroup = SAMBA
-    security = user
-    passdb backend = tdbsam
     smb ports = 7512
 ```
 
-Cela permet à Samba d’écouter sur le port **7512** au lieu du port par défaut **445/tcp**. Assurez-vous que ce port est ouvert dans votre pare-feu pour permettre les connexions au service Samba.
+Cela permet à Samba d’écouter sur le port **7512** au lieu du port par défaut **445/tcp**.
 
-#### 4. **Redémarrage de Samba**
+#### 4. **Redémarrage et activation de Samba**
 
-Une fois la configuration modifiée, nous avons redémarré le service Samba pour appliquer les nouvelles modifications de port et de partage.
+Une fois la configuration modifiée, nous avons redémarré puis activé le service Samba pour appliquer les nouvelles modifications de port et de partage.
 
 **Commande pour redémarrer Samba** :
 
 ```bash
 sudo systemctl restart smb
+sudo systemctl enable smb
 ```
 
-Cette commande permet de recharger la configuration de Samba et d’appliquer immédiatement les changements.
-
-#### 5. **Vérification du port Samba**
-
-Pour vérifier que Samba écoute sur le port que nous avons configuré, nous utilisons la commande suivante pour observer les ports d'écoute du service Samba :
-
-```bash
-sudo netstat -tuln | grep 7512
-```
-
-Si tout est correctement configuré, vous devriez voir **Samba** écouter sur le port **7512**.
-
-#### 6. **Vérification du service Samba**
+#### 5. **Vérification du service Samba**
 
 Enfin, nous avons vérifié que le service Samba fonctionne correctement en utilisant la commande **testparm**, qui permet de tester la syntaxe de la configuration de Samba :
 
@@ -268,4 +249,17 @@ Enfin, nous avons vérifié que le service Samba fonctionne correctement en util
 testparm
 ```
 
-Cette commande permet de s'assurer que le fichier **`smb.conf`** est correct et que Samba peut démarrer sans problème.
+![image](https://github.com/user-attachments/assets/1309eee4-2db9-4b90-932f-290d8eeeb1cd)
+
+#### 6. **Vérification du port Samba**
+
+Pour vérifier que Samba écoute sur le port que nous avons configuré, nous utilisons la commande suivante pour observer les ports d'écoute du service Samba :
+
+```bash
+sudo ss -tnlp | grep 7512
+```
+
+![image](https://github.com/user-attachments/assets/6d329026-0fd7-4224-9df8-934190f45345)
+
+
+
