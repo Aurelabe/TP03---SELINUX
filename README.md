@@ -47,7 +47,15 @@ Les recommandations de l'ANSSI stipulent qu'il est important de séparer les dif
 ---
 ## 3. Sécurisation et configuration du serveur
 
-## 3.1 Sécurisation de l’administration du serveur
+## 3.1.1 Sécurisation de l’administration du serveur
+
+### Mise à jour
+Avant de commencer quoi que ce soit, il est important de lancer une mises à jour afin d'avoir les derniers correctifs de sécurité
+**Commande exécutée :**
+
+   ```bash   
+   sudo dnf update
+   ``` 
 
 ### Configuration de SSH et Renforcement de la Sécurité
 Afin de respecter les bonnes pratiques de sécurisation de l’administration, nous avons mis en place un serveur SSH renforcé, permettant uniquement aux utilisateurs autorisés d'accéder au serveur à l’aide d’une clé SSH sécurisée.
@@ -110,7 +118,7 @@ Voici les étapes entreprises pour sécuriser l'accès SSH :
    
 ---
 
-## 3.1.3 Politique de sécurité
+## 3.1.2 Politique de sécurité
 
 ### Configuration des mots de passe forts via PAM
 Nous avons configuré **PAM** (Pluggable Authentication Modules) afin de renforcer la politique de sécurité des mots de passe. La politique impose une longueur minimale de 10 caractères, ainsi qu’une complexité incluant au moins une majuscule, une minuscule, un chiffre et un caractère spécial.
@@ -147,15 +155,13 @@ Nous avons installé la dernière version de Samba pour gérer les partages de f
 
 ---
 
-## 3.2.2 Préparation des Comptes Utilisateurs
+## 3.3 Préparation des Comptes Utilisateurs
 
 ### Création des utilisateurs et groupes
 Un script shell a été créé pour automatiser la création des comptes utilisateurs et des groupes pour Samba, conformément aux spécifications du TP.
 
 1. **Script pour créer des utilisateurs et des groupes** :
    Le script prend en entrée un fichier structuré contenant la liste des utilisateurs et des groupes à créer. Le mot de passe pour chaque utilisateur est généré conformément à la politique de sécurité de l’entreprise.
-
-   Exemple de script :
 
    ```bash
    #!/bin/bash
