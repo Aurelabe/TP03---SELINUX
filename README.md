@@ -136,57 +136,95 @@ password requisite pam_pwquality.so retry=3 minlen=10 minclass=4
 
 ## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
 
-### Installation de Samba
-Nous avons installé la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Samba permet de créer des partages réseau compatibles avec les systèmes Windows.
+Voici la suite complète du markdown en reprenant ce que je t’avais donné tout à l’heure et **en y intégrant proprement la partie sur la création de la partition `/srv/fileserver` dans `vg_data`**.
 
-1. **Installation de Samba :**
-   ```bash
-   sudo dnf install samba
-   ```
+---
 
-2. **Configuration des fichiers de partage :**
-   La configuration de Samba a été effectuée dans le fichier `/etc/samba/smb.conf` pour définir les partages et les autorisations d'accès.
+## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
 
-   Exemple d’un partage défini pour **/srv/fileserver** :
-   ```ini
-   [fileserver]
+### 3.2.1 Installation de Samba et mise en place du stockage dédié
+
+Nous allons installer la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Pour respecter les bonnes pratiques de sécurité et de maintenance, les fichiers partagés seront stockés sur une partition dédiée (`/srv/fileserver`) configurée avec **LVM** et **le système de fichiers ext4**, ce qui facilite un redimensionnement ultérieur.
+
+#### 1. Création de la partition physique `/dev/sda6`
+
+La partition a été créée avec `fdisk` :
+```bash
+sudo fdisk /dev/sda
+```
+Dans `fdisk`, nous avons :
+- Créé une nouvelle partition (`n`) ;
+- Choisi la taille de la partition ;
+- Sauvegardé avec `w`.
+
+Puis on a rechargé la table :
+```bash
+sudo partprobe
+```
+
+#### 2. Ajout au groupe de volumes et création du volume logique
+
+```bash
+sudo vgextend vg_data /dev/sda6
+sudo lvcreate -L 9G -n fileserver vg_data
+```
+
+#### 3. Formatage et montage de la partition
+
+```bash
+sudo mkfs.ext4 /dev/vg_data/fileserver
+sudo mkdir -p /srv/fileserver
+sudo mount /dev/vg_data/fileserver /srv/fileserver
+```
+
+Pour rendre le montage permanent :
+```bash
+echo "/dev/vg_data/fileserver /srv/fileserver ext4 defaults 0 2" | sudo tee -a /etc/fstab
+```
+
+#### Chiffrement de la partition ?
+
+Le volume `/srv/fileserver` **n’a pas été chiffré**.
+
+**Justification** :
+- La partition ne contient **pas de données sensibles**.
+- Le serveur est restreint dans une zone réseau fermée (zone `restricted` de `firewalld`).
+- L’accès est contrôlé uniquement via Samba avec authentification utilisateur.
+- Le chiffrement ajouterait de la complexité (notamment pour le redémarrage automatique du service) sans bénéfice significatif ici.
+
+En cas d’évolution des exigences (stockage de données confidentielles), une solution de chiffrement comme **LUKS2** pourrait être envisagée ultérieurement.
+
+---
+
+### 3.2.2 Configuration de Samba
+
+Samba permet de partager des dossiers accessibles depuis les machines du réseau, notamment les clients Windows.
+
+#### 1. Installation de Samba
+
+```bash
+sudo dnf install samba
+```
+
+#### 2. Configuration du fichier `/etc/samba/smb.conf`
+
+Un partage a été défini pour `/srv/fileserver` :
+```ini
+[fileserver]
    path = /srv/fileserver
    read only = no
-   ```
+   browsable = yes
+   guest ok = no
+```
+
+La section `[global]` contient les paramètres suivants :
+```ini
+[global]
+   workgroup = SAMBA
+   security = user
+   passdb backend = tdbsam
+```
 
 ---
 
-## 3.3 Préparation des Comptes Utilisateurs
-
-### Création des utilisateurs et groupes
-Un script shell a été créé pour automatiser la création des comptes utilisateurs et des groupes pour Samba, conformément aux spécifications du TP.
-
-1. **Script pour créer des utilisateurs et des groupes** :
-   Le script prend en entrée un fichier structuré contenant la liste des utilisateurs et des groupes à créer. Le mot de passe pour chaque utilisateur est généré conformément à la politique de sécurité de l’entreprise.
-
-   ```bash
-   #!/bin/bash
-   create_group() {
-       groupname=$1
-       if ! getent group $groupname > /dev/null; then
-           groupadd $groupname
-           echo "Groupe $groupname créé"
-       else
-           echo "Le groupe $groupname existe déjà"
-       fi
-   }
-
-   # Liste des utilisateurs et groupes à créer
-   create_group "Service_Informatique"
-   create_group "Service_Comptable"
-   create_group "Pilotage"
-   create_group "Direction"
-
-   # Création des utilisateurs et assignation des groupes
-   useradd -m -G Service_Informatique utilisateur1
-   passwd utilisateur1
-   ```
-
----
-
-## 3.2.3 Structure des Répertoires
+Souhaites-tu que j’enchaîne maintenant sur la **configuration du port personnalisé de Samba** ou sur la **préparation des utilisateurs via le script shell dans `/opt/scripts/maintenance`** ?
