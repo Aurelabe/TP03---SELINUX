@@ -251,6 +251,27 @@ testparm
 
 ![image](https://github.com/user-attachments/assets/1309eee4-2db9-4b90-932f-290d8eeeb1cd)
 
+Le résultat de la commande testparm montre que la configuration de Samba a été chargée correctement et que le fichier /etc/samba/smb.conf ne présente pas d'erreurs majeures. Cependant, il indique également que la crypto faible est autorisée par GnuTLS, ce qui permet des connexions moins sécurisées, comme celles utilisant NTLM, principalement pour des raisons de compatibilité.
+
+Alors, nous avons modifier le fichier `smb.conf` en ajoutant ces lignes à **[global]** :
+
+```ini
+[global]
+   server min protocol = SMB2
+   smb encrypt = required
+   ntlm auth = no
+```
+
+- **`server min protocol = SMB2`** : Cette directive s'assure que la version minimale de SMB utilisée est SMB2, évitant ainsi les connexions utilisant SMB1.
+- **`smb encrypt = required`** : Cette option oblige l'utilisation de chiffrement pour toutes les connexions.
+- **`ntlm auth = no`** : Cette directive désactive l'authentification NTLM, la rendant obsolète au profit des méthodes plus sécurisées comme Kerberos.
+
+Une fois ces modifications effectuées, nous avons redémarré Samba avec la commande suivante pour appliquer les nouvelles règles :
+
+```bash
+sudo systemctl restart smb
+```
+
 #### 6. **Vérification du port Samba**
 
 Pour vérifier que Samba écoute sur le port que nous avons configuré, nous utilisons la commande suivante pour observer les ports d'écoute du service Samba :
