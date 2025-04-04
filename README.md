@@ -136,12 +136,6 @@ password requisite pam_pwquality.so retry=3 minlen=10 minclass=4
 
 ## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
 
-Voici la suite complète du markdown en reprenant ce que je t’avais donné tout à l’heure et **en y intégrant proprement la partie sur la création de la partition `/srv/fileserver` dans `vg_data`**.
-
----
-
-## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
-
 ### 3.2.1 Installation de Samba et mise en place du stockage dédié
 
 Nous allons installer la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Pour respecter les bonnes pratiques de sécurité et de maintenance, les fichiers partagés seront stockés sur une partition dédiée (`/srv/fileserver`) configurée avec **LVM** et **le système de fichiers ext4**, ce qui facilite un redimensionnement ultérieur.
