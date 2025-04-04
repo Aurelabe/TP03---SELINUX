@@ -138,7 +138,7 @@ password requisite pam_pwquality.so retry=3 minlen=10 minclass=4
 
 ### 3.2.1 Installation de Samba et mise en place du stockage dédié
 
-Nous allons installer la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Pour respecter les bonnes pratiques de sécurité et de maintenance, les fichiers partagés seront stockés sur une partition dédiée (`/srv/fileserver`) configurée avec **LVM** et **le système de fichiers ext4**, ce qui facilite un redimensionnement ultérieur.
+Nous avons installés la dernière version de Samba pour gérer les partages de fichiers sur le serveur. Pour respecter les bonnes pratiques de sécurité et de maintenance, les fichiers partagés seront stockés sur une partition dédiée (`/srv/fileserver`) configurée avec **LVM** et **le système de fichiers ext4**, ce qui facilite un redimensionnement ultérieur.
 
 #### 1. Création de la partition physique `/dev/sda6`
 
