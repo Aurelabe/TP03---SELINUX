@@ -342,7 +342,7 @@ Le but ici est de créer un script shell qui générera automatiquement des comp
    # Fonction pour créer un utilisateur avec mot de passe fort
    create_user() {
        if ! id "$1" &>/dev/null; then
-           useradd -m -s /bin/bash -G "$2" "$1"
+           useradd -m -s /bin/bash -G "$2" "$1" --badname
            PASSWORD=$(openssl rand -base64 12)  # Générer un mot de passe fort
            echo "$1:$PASSWORD" | chpasswd
            echo "Utilisateur $1 créé avec mot de passe : $PASSWORD"
