@@ -757,14 +757,14 @@ echo "Revue des accès terminée. Le rapport a été envoyé à $email_admin."
 
 Comme pour le script précédent, il est important que le script ait les bonnes permissions et soit accessible uniquement par le groupe `Service_Informatique`.
 
-##### 1. **Attribution des accès au script dans `/opt/scripts/maintenance/`** :
+- **Attribution des accès au script dans `/opt/scripts/maintenance/`** :
 
 ```bash
 sudo chown root:Service_Informatique /opt/scripts/maintenance/controle_acces.sh
 sudo chmod 750 /opt/scripts/maintenance/controle_acces.sh
 ```
 
-##### 2. **Configuration des privilèges `sudo`** :
+- **Configuration des privilèges `sudo`** :
 
 Pour permettre aux membres de `Service_Informatique` d'exécuter certaines commandes avec `sudo` sans mot de passe, onajoute cette ligne dans le fichier sudoers via `visudo` :
 
