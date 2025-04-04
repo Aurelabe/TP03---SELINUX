@@ -117,7 +117,6 @@ Voici les étapes entreprises pour sécuriser l'accès SSH :
   ![image](https://github.com/user-attachments/assets/764b4690-0448-4025-9d23-3a23604ce554)
 
 
----
 
 ## 3.2 Configuration et Durcissement du Rôle Serveur de Fichiers
 
@@ -426,3 +425,224 @@ Les membres du groupe **Service Informatique** peuvent exécuter ce script avec 
    ```
    %Service_Informatique ALL=(ALL) NOPASSWD: /opt/scripts/maintenance/create_users.sh
    ```
+
+
+
+### 3.3 Préparation de la structure des répertoires
+
+   Nous créerons la structure des répertoires partagés sur `/srv/fileserver`, selon les besoins de l'entreprise. Nous allons donc créer les dossiers nécessaires et y appliquer les permissions via les ACLs POSIX, tout en garantissant que **seul le propriétaire d'un fichier peut le supprimer**.
+
+Voici la structure des répertoires telle que définie dans l'annexe :
+
+```
+/srv/fileserver
+    ├── D1 - Direction
+    │   ├── D1-1 – Stratégie
+    │   ├── D1-2 – Achats
+    ├── C1 - Comptabilité
+    │   ├── C1-1 - Comptabilité
+    │   ├── C1-2 - TVA
+    │   ├── C1-3 - Facturation
+    ├── A1 - Administratif
+    │   ├── A1-1 - Gestion des congés
+    │   ├── A1-2 - Gestion des formations internes
+    │   ├── A1-3 - Qualité
+    │   ├── A1-4 - Achats
+    ├── D2 - DSI
+    │   ├── D2-1 - Procédures
+    │   ├── D2-2 - Divers scripts
+    │   ├── D2-3 - Documentation du SI
+    ├── D3 - Dépôt
+    ├── C2 - Commun
+        ├── C2-1 - Direction
+        ├── C2-2 - Administratif
+        ├── C2-3 - Informatique
+        ├── C2-4 - Production
+```
+
+
+#### 1. Création des répertoires
+Voici les commandes exécutées pour créer cette structure de répertoires sans les lettres (D1, C1, etc.) :
+
+```bash
+sudo mkdir -p /srv/fileserver/Direction/{Strategie,Achats} \
+             /srv/fileserver/Comptabilite/{Comptabilite,TVA,Facturation} \
+             /srv/fileserver/Administratif/{Gestion_des_conges,Gestion_des_formations_internes,Qualite,Achats} \
+             /srv/fileserver/DSI/{Procedures,Divers_scripts,Documentation_du_SI} \
+             /srv/fileserver/Commun/{Direction,Administratif,Informatique,Production} \
+             /srv/fileserver/Depot
+```
+
+#### 2. Application des ACLs POSIX
+   Maintenant que la structure des répertoires est en place, nous appliquons les ACLs POSIX pour gérer les permissions de manière fine. Nous allons garantir que chaque groupe associé à un répertoire donné aura les bonnes permissions d'accès.
+
+##### Pour le répertoire `/srv/fileserver/Direction` :
+```bash
+sudo setfacl -m g:Direction:rwx /srv/fileserver/Direction
+sudo setfacl -d -m g:Direction:rwx /srv/fileserver/Direction
+
+sudo setfacl -m g:Direction:rwx /srv/fileserver/Direction/Strategie
+sudo setfacl -d -m g:Direction:rwx /srv/fileserver/Direction/Strategie
+
+sudo setfacl -m g:Direction:rwx /srv/fileserver/Direction/Achats
+sudo setfacl -d -m g:Direction:rwx /srv/fileserver/Direction/Achats
+```
+
+Cette méthode sera répétée pour chaque répertoire spécifique, en appliquant les permissions en fonction des groupes comme indiqué dans l'énoncé du TP.
+
+##### Pour `/srv/fileserver/Comptabilite` :
+```bash
+sudo setfacl -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite
+sudo setfacl -d -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite
+
+sudo setfacl -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/Comptabilite
+sudo setfacl -d -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/Comptabilite
+
+sudo setfacl -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/TVA
+sudo setfacl -d -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/TVA
+
+sudo setfacl -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/Facturation
+sudo setfacl -d -m g:Service_Comptable:rwx /srv/fileserver/Comptabilite/Facturation
+```
+
+##### Pour `/srv/fileserver/Administratif` :
+```bash
+sudo setfacl -m g:Service_Logistique:rwx /srv/fileserver/Administratif
+sudo setfacl -d -m g:Service_Logistique:rwx /srv/fileserver/Administratif
+
+sudo setfacl -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Gestion_des_conges
+sudo setfacl -d -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Gestion_des_conges
+
+sudo setfacl -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Gestion_des_formations_internes
+sudo setfacl -d -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Gestion_des_formations_internes
+
+sudo setfacl -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Qualite
+sudo setfacl -d -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Qualite
+
+sudo setfacl -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Achats
+sudo setfacl -d -m g:Service_Logistique:rwx /srv/fileserver/Administratif/Achats
+
+```
+
+##### Pour `/srv/fileserver/DSI` :
+```bash
+sudo setfacl -m g:Service_Informatique:rwx /srv/fileserver/DSI
+sudo setfacl -d -m g:Service_Informatique:rwx /srv/fileserver/DSI
+
+sudo setfacl -m g:Service_Informatique:rwx /srv/fileserver/DSI/Procedures
+sudo setfacl -d -m g:Service_Informatique:rwx /srv/fileserver/DSI/Procedures
+
+sudo setfacl -m g:Service_Informatique:rwx /srv/fileserver/DSI/Divers_scripts
+sudo setfacl -d -m g:Service_Informatique:rwx /srv/fileserver/DSI/Divers_scripts
+
+sudo setfacl -m g:Service_Informatique:rwx /srv/fileserver/DSI/Documentation_du_SI
+sudo setfacl -d -m g:Service_Informatique:rwx /srv/fileserver/DSI/Documentation_du_SI
+
+```
+
+##### Pour `/srv/fileserver/Commun` :
+```bash
+sudo setfacl -m g:Pilotage:rwx /srv/fileserver/Commun
+sudo setfacl -d -m g:Pilotage:rwx /srv/fileserver/Commun
+
+sudo setfacl -m g:Pilotage:rwx /srv/fileserver/Commun/Direction
+sudo setfacl -d -m g:Pilotage:rwx /srv/fileserver/Commun/Direction
+
+sudo setfacl -m g:Pilotage:rwx /srv/fileserver/Commun/Administratif
+sudo setfacl -d -m g:Pilotage:rwx /srv/fileserver/Commun/Administratif
+
+sudo setfacl -m g:Pilotage:rwx /srv/fileserver/Commun/Informatique
+sudo setfacl -d -m g:Pilotage:rwx /srv/fileserver/Commun/Informatique
+
+sudo setfacl -m g:Pilotage:rwx /srv/fileserver/Commun/Production
+sudo setfacl -d -m g:Pilotage:rwx /srv/fileserver/Commun/Production
+
+```
+
+##### Pour `/srv/fileserver/Depôt` :
+```bash
+sudo setfacl -m g:Direction:rwx /srv/fileserver/Depot
+sudo setfacl -d -m g:Direction:rwx /srv/fileserver/Depot
+```
+
+#### 3. Vérification des ACLs
+Pour vérifier les ACLs appliquées sur les répertoires et s’assurer qu’elles respectent les règles définies, nous avons utilisés la commande suivante :
+
+```bash
+sudo getfacl -R /srv/fileserver
+```
+Voici un petit aperçu de la sortie :
+
+![image](https://github.com/user-attachments/assets/a3ae6c2c-c061-468a-a382-e4f1660ff06a)
+
+
+### 3.4 Sauvegarde du serveur
+
+   Nous allons maintenant créer un script shell pour effectuer une sauvegarde de la structure de répertoires sur `/srv/fileserver`, avec un chiffrement AES-256-GCM et stockage de l'archive sur un espace en ligne.
+
+#### 1. Création du script
+
+Le script devra être placé dans `/opt/scripts/maintenance/`, et devra effectuer les actions suivantes :
+
+- **Créer une archive tar.gz chiffrée** du répertoire `/srv/fileserver`.
+- **Générer une clé de chiffrement AES-256-GCM** lors de la sauvegarde.
+- **Envoyer la clé de chiffrement par email à l'administrateur.**
+- **Déposer l'archive sur un espace en ligne dédié.**
+
+Voici un exemple de script (`backup.sh`), en tenant compte des tâches décrites ci-dessus :
+
+```bash
+#!/bin/bash
+
+# Variables
+backup_dir="/srv/fileserver"
+backup_file="/opt/scripts/maintenance/backup-$(date +%F).tar.gz"
+encryption_key=$(openssl rand -base64 32)
+email_admin="admin@company.com"
+
+# Créer une archive tar.gz
+tar -czf $backup_file $backup_dir
+
+# Chiffrement de l'archive
+openssl enc -aes-256-gcm -salt -in $backup_file -out ${backup_file}.enc -k $encryption_key
+
+# Envoyer la clé de chiffrement par email
+echo "La clé de chiffrement est : $encryption_key" | mail -s "Clé de chiffrement de la sauvegarde" $email_admin
+
+# Télécharger l'archive chiffrée sur l'espace en ligne
+scp ${backup_file}.enc user@online-space:/backup/
+
+# Suppression de l'archive non chiffrée pour des raisons de sécurité
+rm $backup_file
+
+echo "Sauvegarde effectuée avec succès."
+```
+
+#### 2. Permissions du script
+
+Le script doit être exécuté par le compte `SauvegardeServeur`. Il doit être stocké dans `/opt/scripts/maintenance/` avec les bonnes permissions. Voici les commandes pour attribuer les permissions :
+
+1. **Création du compte et du groupe `SauvegardeServeur`** :
+   ```bash
+   useradd -m -s /bin/bash SauvegardeServeur
+   groupadd SauvegardeServeur
+   usermod -a -G SauvegardeServeur SauvegardeServeur
+   ```
+
+2. **Attribution des droits d'accès** au script :
+   ```bash
+   chown root:SauvegardeServeur /opt/scripts/maintenance/backup.sh
+   chmod 750 /opt/scripts/maintenance/backup.sh
+   ```
+
+3. **Sudoers pour l'exécution sans mot de passe** :
+   Ajoutez la ligne suivante au fichier `/etc/sudoers` pour permettre à `Service_Informatique` d'exécuter certaines commandes avec `sudo` sans mot de passe :
+   ```bash
+   Service_Informatique ALL=(ALL) NOPASSWD: /usr/bin/openssl, /bin/tar, /usr/bin/mail, /usr/bin/scp
+   ```
+
+Cela garantit que seul `SauvegardeServeur` et les membres du groupe `Service_Informatique` peuvent exécuter le script.
+
+---
+
+Cela couvre les sections 3.3 et 3.4 de la demande. Vous pouvez maintenant procéder à la création du script et à l'application des ACLs sur les répertoires. N'hésitez pas à poser des questions si vous avez besoin de plus de détails sur un point précis.
