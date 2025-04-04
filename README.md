@@ -45,6 +45,7 @@ Le choix des volumes LVM permet une gestion flexible des partitions, facilitant 
 Les recommandations de l'ANSSI stipulent qu'il est important de séparer les différentes partitions pour limiter les risques d'attaque. Cette configuration permet de séparer les volumes essentiels et d’assurer une meilleure gestion des permissions et de la sécurité, en particulier pour les volumes sensibles contenant des données utilisateurs et des fichiers logs. En outre, le chiffrement des volumes importants et la séparation des partitions garantissent une sécurité renforcée.
 
 ---
+## 3. Sécurisation et configuration du serveur
 
 ## 3.1 Sécurisation de l’administration du serveur
 
@@ -102,7 +103,7 @@ Voici les étapes entreprises pour sécuriser l'accès SSH :
 
    **Vérification de la zone :**
    ```bash
-   sudo firewall-cmd --list-all
+   sudo firewall-cmd --zone=restricted --list-all
    ```
   ![image](https://github.com/user-attachments/assets/764b4690-0448-4025-9d23-3a23604ce554)
 
