@@ -182,35 +182,90 @@ On utilise `lsblk` pour vérifier la hiérarchie des volumes :
 ![image](https://github.com/user-attachments/assets/933b1da3-183e-4ced-b65b-6e8f2deb4a32)
 
 
-### 3.2.2 Configuration de Samba
+Merci pour la précision, voici la suite complète de la section **3.2.2 Installation et Configuration de Samba**, avec l'intégration du changement de port pour Samba :
 
-Samba permet de partager des dossiers accessibles depuis les machines du réseau, notamment les clients Windows.
+---
 
-#### 1. Installation de Samba
+### 3.2.2 Installation et Configuration de Samba
+
+#### 1. **Installation de Samba**
+
+Nous avons installé la dernière version de Samba pour permettre la gestion des partages de fichiers sur le serveur. Samba est essentiel pour le partage de fichiers entre systèmes Windows et Linux, en utilisant le protocole SMB/CIFS.
+
+**Commande pour installer Samba :**
 
 ```bash
 sudo dnf install samba
 ```
 
-#### 2. Configuration du fichier `/etc/samba/smb.conf`
+Cette commande installe Samba ainsi que les autres paquets nécessaires à son fonctionnement.
 
-Un partage a été défini pour `/srv/fileserver` :
-```ini
-[fileserver]
-   path = /srv/fileserver
-   read only = no
-   browsable = yes
-   guest ok = no
-```
+#### 2. **Configuration de Samba**
 
-La section `[global]` contient les paramètres suivants :
+Nous avons ensuite configuré le fichier **`/etc/samba/smb.conf`** afin de définir le partage et les paramètres nécessaires.
+
+**Extrait de la configuration de `smb.conf`** pour le partage du répertoire **`/srv/fileserver`** :
+
 ```ini
 [global]
-   workgroup = SAMBA
-   security = user
-   passdb backend = tdbsam
+    workgroup = SAMBA
+    security = user
+    passdb backend = tdbsam
+
+[fileserver]
+    path = /srv/fileserver
+    read only = no
+    browseable = yes
 ```
 
----
+Cette configuration définit un partage **`fileserver`** pointant sur la partition montée à **`/srv/fileserver`**, avec un accès en lecture et écriture.
 
-Souhaites-tu que j’enchaîne maintenant sur la **configuration du port personnalisé de Samba** ou sur la **préparation des utilisateurs via le script shell dans `/opt/scripts/maintenance`** ?
+#### 3. **Changement du port Samba**
+
+Le port par défaut de Samba pour les services SMB (445/tcp) peut être modifié pour renforcer la sécurité, en évitant les tentatives d'attaque sur des ports bien connus. Nous avons donc changé le port d’écoute de Samba.
+
+**Modification du port dans `smb.conf`** :
+
+Nous avons ajouté la ligne suivante à la section **[global]** du fichier **`/etc/samba/smb.conf`** pour utiliser un autre port (par exemple, **7512**):
+
+```ini
+[global]
+    workgroup = SAMBA
+    security = user
+    passdb backend = tdbsam
+    smb ports = 7512
+```
+
+Cela permet à Samba d’écouter sur le port **7512** au lieu du port par défaut **445/tcp**. Assurez-vous que ce port est ouvert dans votre pare-feu pour permettre les connexions au service Samba.
+
+#### 4. **Redémarrage de Samba**
+
+Une fois la configuration modifiée, nous avons redémarré le service Samba pour appliquer les nouvelles modifications de port et de partage.
+
+**Commande pour redémarrer Samba** :
+
+```bash
+sudo systemctl restart smb
+```
+
+Cette commande permet de recharger la configuration de Samba et d’appliquer immédiatement les changements.
+
+#### 5. **Vérification du port Samba**
+
+Pour vérifier que Samba écoute sur le port que nous avons configuré, nous utilisons la commande suivante pour observer les ports d'écoute du service Samba :
+
+```bash
+sudo netstat -tuln | grep 7512
+```
+
+Si tout est correctement configuré, vous devriez voir **Samba** écouter sur le port **7512**.
+
+#### 6. **Vérification du service Samba**
+
+Enfin, nous avons vérifié que le service Samba fonctionne correctement en utilisant la commande **testparm**, qui permet de tester la syntaxe de la configuration de Samba :
+
+```bash
+testparm
+```
+
+Cette commande permet de s'assurer que le fichier **`smb.conf`** est correct et que Samba peut démarrer sans problème.
