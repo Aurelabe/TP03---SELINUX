@@ -589,28 +589,49 @@ Le script devra être placé dans `/opt/scripts/maintenance/`, et devra effectue
 - **Envoyer la clé de chiffrement par email à l'administrateur.**
 - **Déposer l'archive sur un espace en ligne dédié.**
 
-Voici un exemple de script (`backup.sh`), en tenant compte des tâches décrites ci-dessus :
 
 ```bash
-#!/bin/bash
+#/opt/scripts/maintenance/backup.sh
 
 # Variables
 backup_dir="/srv/fileserver"
 backup_file="/opt/scripts/maintenance/backup-$(date +%F).tar.gz"
-encryption_key=$(openssl rand -base64 32)
-email_admin="admin@company.com"
+encryption_key=$(openssl rand -base64 32)   # Générer une clé de chiffrement aléatoire
+encryption_key_file="/opt/scripts/maintenance/encryption_key-$(date +%F).key"  # Fichier de la clé
+email_admin="admin@company.com"  # Email de l'administrateur
+remote_server="user@online-space"  # Serveur distant pour la sauvegarde
+remote_dir="/backup/"  # Répertoire sur le serveur distant pour stocker l'archive
 
-# Créer une archive tar.gz
+# Création de l'archive tar.gz
+echo "Création de l'archive tar.gz..."
 tar -czf $backup_file $backup_dir
+if [ $? -ne 0 ]; then
+    echo "Erreur lors de la création de l'archive. Script arrêté."
+    exit 1
+fi
 
-# Chiffrement de l'archive
+# Chiffrement de l'archive avec AES-256-GCM
+echo "Chiffrement de l'archive..."
 openssl enc -aes-256-gcm -salt -in $backup_file -out ${backup_file}.enc -k $encryption_key
+if [ $? -ne 0 ]; then
+    echo "Erreur lors du chiffrement de l'archive. Script arrêté."
+    exit 1
+fi
+
+# Sauvegarder la clé de chiffrement dans un fichier sécurisé
+echo $encryption_key > $encryption_key_file
+chmod 600 $encryption_key_file  # Sécuriser le fichier clé
 
 # Envoyer la clé de chiffrement par email
 echo "La clé de chiffrement est : $encryption_key" | mail -s "Clé de chiffrement de la sauvegarde" $email_admin
 
 # Télécharger l'archive chiffrée sur l'espace en ligne
-scp ${backup_file}.enc user@online-space:/backup/
+echo "Déploiement de l'archive sur l'espace en ligne..."
+scp ${backup_file}.enc $remote_server:$remote_dir
+if [ $? -ne 0 ]; then
+    echo "Erreur lors du transfert de l'archive. Script arrêté."
+    exit 1
+fi
 
 # Suppression de l'archive non chiffrée pour des raisons de sécurité
 rm $backup_file
@@ -623,26 +644,27 @@ echo "Sauvegarde effectuée avec succès."
 Le script doit être exécuté par le compte `SauvegardeServeur`. Il doit être stocké dans `/opt/scripts/maintenance/` avec les bonnes permissions. Voici les commandes pour attribuer les permissions :
 
 1. **Création du compte et du groupe `SauvegardeServeur`** :
-   ```bash
-   useradd -m -s /bin/bash SauvegardeServeur
-   groupadd SauvegardeServeur
-   usermod -a -G SauvegardeServeur SauvegardeServeur
+
+    ```bash
+     sudo useradd -m -s /bin/bash SauvegardeServeur
+     sudo groupadd SauvegardeServeur
+     sudo usermod -a -G SauvegardeServeur SauvegardeServeur
    ```
 
-2. **Attribution des droits d'accès** au script :
-   ```bash
-   chown root:SauvegardeServeur /opt/scripts/maintenance/backup.sh
-   chmod 750 /opt/scripts/maintenance/backup.sh
+3. **Attribution des droits d'accès** au script :
+
+    ```bash
+      sudo chown root:SauvegardeServeur /opt/scripts/maintenance/backup.sh
+      sudo chmod 750 /opt/scripts/maintenance/backup.sh
    ```
 
-3. **Sudoers pour l'exécution sans mot de passe** :
-   Ajoutez la ligne suivante au fichier `/etc/sudoers` pour permettre à `Service_Informatique` d'exécuter certaines commandes avec `sudo` sans mot de passe :
+5. **Sudoers pour l'exécution sans mot de passe** :
+
+    La ligne suivante a été ajoutée au fichier `/etc/sudoers` pour permettre à `Service_Informatique` d'exécuter certaines commandes avec `sudo` sans mot de passe :
+   
    ```bash
    Service_Informatique ALL=(ALL) NOPASSWD: /usr/bin/openssl, /bin/tar, /usr/bin/mail, /usr/bin/scp
    ```
 
 Cela garantit que seul `SauvegardeServeur` et les membres du groupe `Service_Informatique` peuvent exécuter le script.
 
----
-
-Cela couvre les sections 3.3 et 3.4 de la demande. Vous pouvez maintenant procéder à la création du script et à l'application des ACLs sur les répertoires. N'hésitez pas à poser des questions si vous avez besoin de plus de détails sur un point précis.
