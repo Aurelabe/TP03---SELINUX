@@ -1,4 +1,4 @@
-   # Rapport : Préparation et durcissement du système d'exploitation
+# Rapport : Préparation et durcissement du système d'exploitation
 
 ## 1. Installation du système d’exploitation
 
@@ -668,3 +668,106 @@ Le script doit être exécuté par le compte `SauvegardeServeur`. Il doit être 
 
 Cela garantit que seul `SauvegardeServeur` et les membres du groupe `Service_Informatique` peuvent exécuter le script.
 
+
+
+### 3.5 Revue des accès et contrôle de conformité
+
+### 1. Objectifs du script
+
+- Vérifier que les fichiers et répertoires ont les bonnes permissions (en fonction de la matrice de droits de référence).
+- Désactiver les comptes qui ne correspondent pas à la matrice de référence.
+- Créer un rapport détaillé des écarts.
+
+### 2. Structure du script
+
+
+```bash
+# /opt/scripts/maintenance/controle_acces.sh
+
+# Paramètres
+reference_file="$1"
+report_file="/opt/scripts/maintenance/rapport_acces_$(date +%F).txt"
+date=$(date "+%Y-%m-%d %H:%M:%S")
+email_admin="admin@company.com"
+
+# Vérification si le fichier de référence existe
+if [ ! -f "$reference_file" ]; then
+    echo "Le fichier de référence $reference_file est introuvable." >> $report_file
+    exit 1
+fi
+
+# En-tête du rapport
+echo "Rapport de revue des accès - $date" > $report_file
+echo "--------------------------------------------------" >> $report_file
+
+# Fonction de comparaison des privilèges
+check_permissions() {
+    local file_path="$1"
+    local expected_permissions="$2"
+    actual_permissions=$(stat -c %a "$file_path")
+    
+    if [ "$actual_permissions" != "$expected_permissions" ]; then
+        echo "Erreur sur les permissions de $file_path : attendu $expected_permissions, trouvé $actual_permissions." >> $report_file
+    fi
+}
+
+# Fonction pour vérifier les utilisateurs
+check_user() {
+    local user="$1"
+    user_exists=$(id -u "$user" &>/dev/null && echo "yes" || echo "no")
+
+    if [ "$user_exists" == "no" ]; then
+        echo "L'utilisateur $user est absent sur le système, il sera désactivé." >> $report_file
+        sudo usermod -L "$user" # Désactivation de l'utilisateur
+    fi
+}
+
+# Lecture de la matrice de référence et vérification
+while IFS=, read -r file_path expected_permissions
+do
+    # Vérifier les permissions sur chaque fichier/dossier
+    check_permissions "$file_path" "$expected_permissions"
+done < "$reference_file"
+
+# Vérification des utilisateurs et groupes
+while IFS=, read -r user
+do
+    # Vérifier si l'utilisateur existe et, sinon, le désactiver
+    check_user "$user"
+done < "$reference_file"
+
+# Finaliser le rapport
+echo "--------------------------------------------------" >> $report_file
+echo "Revue terminée - $date" >> $report_file
+
+# Envoyer un email à l'administrateur avec le rapport
+mail -s "Rapport de revue des accès" $email_admin < $report_file
+
+echo "Revue des accès terminée. Le rapport a été envoyé à $email_admin."
+```
+
+### 3. Explications des parties principales du script
+
+- **Lecture du fichier de référence** : Le fichier de référence contient la liste des chemins des fichiers/dossiers et les permissions attendues, ainsi que les utilisateurs à vérifier.
+- **Vérification des permissions** : Pour chaque fichier/dossier, le script compare les permissions actuelles avec celles spécifiées dans la matrice de référence. Si elles ne correspondent pas, une erreur est enregistrée dans le rapport.
+- **Vérification des utilisateurs** : Le script s'assure que les utilisateurs mentionnés dans le fichier de référence existent. Si un utilisateur n'existe pas, il sera désactivé avec `usermod -L`.
+- **Rapport et envoi par email** : Le script génère un rapport détaillant les erreurs et les utilisateurs désactivés, puis envoie ce rapport par email à l'administrateur.
+
+### 4. Permissions du script
+
+Comme pour le script précédent, il est important que le script ait les bonnes permissions et soit accessible uniquement par le groupe `Service_Informatique`.
+
+#### 1. **Attribution des accès au script dans `/opt/scripts/maintenance/`** :
+
+```bash
+sudo chown root:Service_Informatique /opt/scripts/maintenance/controle_acces.sh
+sudo chmod 750 /opt/scripts/maintenance/controle_acces.sh
+```
+
+#### 2. **Configuration des privilèges `sudo`** :
+
+Pour permettre aux membres de `Service_Informatique` d'exécuter certaines commandes avec `sudo` sans mot de passe, onajoute cette ligne dans le fichier sudoers via `visudo` :
+
+```bash
+Service_Informatique ALL=(ALL) NOPASSWD: /usr/bin/stat, /usr/sbin/usermod, /usr/bin/mail
+```
