@@ -47,7 +47,7 @@ Les recommandations de l'ANSSI stipulent qu'il est important de séparer les dif
 ---
 ## 3. Sécurisation et configuration du serveur
 
-## 3.1.1 Sécurisation de l’administration du serveur
+## 3.1 Sécurisation de l’administration du serveur
 
 ### Mise à jour
 Avant de commencer quoi que ce soit, il est important de lancer une mise à jour afin d'avoir les derniers correctifs de sécurité
@@ -116,21 +116,6 @@ Voici les étapes entreprises pour sécuriser l'accès SSH :
    ```
   ![image](https://github.com/user-attachments/assets/764b4690-0448-4025-9d23-3a23604ce554)
 
-   
----
-
-## 3.1.2 Politique de sécurité
-
-### Configuration des mots de passe forts via PAM
-Nous avons configuré **PAM** (Pluggable Authentication Modules) afin de renforcer la politique de sécurité des mots de passe. La politique impose une longueur minimale de 10 caractères, ainsi qu’une complexité incluant au moins une majuscule, une minuscule, un chiffre et un caractère spécial.
-
-**Modification du fichier `/etc/pam.d/system-auth` pour appliquer cette politique :**
-
-```bash
-sudo vim /etc/pam.d/system-auth
-# Ajout ou modification de la ligne suivante :
-password requisite pam_pwquality.so retry=3 minlen=10 minclass=4
-```
 
 ---
 
